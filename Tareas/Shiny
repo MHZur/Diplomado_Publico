@@ -1,0 +1,97 @@
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+### Página web https://mhzur.shinyapps.io/test_1/
+
+
+library(shiny)
+
+mtcars
+
+mtcars1 <-mtcars
+
+mtcars1['kpl'] <- mtcars1['mpg']*0.4251
+
+mtcars1$cyl <- as.factor(mtcars1$cyl)
+
+cyl_list <- sort(unique(mtcars1$cyl))
+
+cyl_list <- as.character(cyl_list)
+
+cyl_list <- append(cyl_list, "Todos")
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+
+    # Application title
+    titlePanel("Rendimiento de combustible"),
+
+    # Sidebar with a slider input for number of bins 
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("bins",
+                        "Number of bins:",
+                        min = 2, 
+                        max = 10,
+                        value = 5),
+            selectInput(inputId = "units", "Selecciona las unidades mpg ó kpl", choices = c("mpg", "kpl"), selected = "mpg", multiple = FALSE),
+            selectInput(inputId = "cyl", "Selecciona cantidad de cilindros", choices = cyl_list, selected = "Todos", multiple = FALSE)
+        ),
+
+        # Show a plot of the generated distribution
+        mainPanel(
+           plotOutput("distPlot")
+        )
+    )
+)
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+    output$distPlot <- renderPlot({
+        # generate bins based on input$bins from ui.R}
+        title_hist <- "Consumo en automóviles de "
+        title_hist <- paste(title_hist, "4, 6 y 8")
+        if (input$cyl != "Todos"){
+            title_hist <- paste(title_hist, input$cyl)
+            mtcars1 <- subset(mtcars1, cyl == input$cyl)
+            
+        }
+        
+        if (input$units == "mpg"){
+            title_hist <- paste(title_hist, "cilindros en millas por galón.")
+            x    <- mtcars1$mpg
+            a    <- floor(min(mtcars1$mpg))
+            b    <- ceiling(max(mtcars1$mpg))
+        }
+        else {
+            title_hist <- paste(title_hist, "cilindros en kilómetros por litro.")
+            x    <- mtcars1$kpl
+            a    <- floor(min(mtcars1$kpl))
+            b    <- ceiling(max(mtcars1$kpl))
+        }
+        
+        bins <- seq(a, b, length.out = input$bins + 1)
+        
+
+        # draw the histogram with the specified number of bins
+        hist(x, 
+             breaks = bins, 
+             col = 'blue', 
+             border = 'black',
+             main = title_hist,
+             xaxt="n",
+             xlab = "Unidades")
+        axis(side=1, at= round(seq(a, b, (b-a)/input$bins), digits = 2))
+            
+    })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
